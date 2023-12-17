@@ -1,0 +1,5 @@
+{
+    "board": "arduino:avr:uno",
+    "sketch": "xe_do_line_5_mat_BAOTT569.ino",
+    "port": "COM12"
+}
