@@ -2,7 +2,7 @@ const size_t sensorLine[] = {A0, A1, A2, A3, A4};
 int valueTotalSen[] = {0, 0, 0, 0, 0};
 
 unsigned long previousMillis = 0; // Biến để lưu giữ thời gian lần cuối cùng
-const long interval = 20;         // Thời gian chờ là 1 giây (2 milliseconds)
+const long interval = 20;         // Thời gian chờ là 20 milliseconds (đã sửa đổi từ 1 giây)
 
 size_t arraySize = sizeof(sensorLine) / sizeof(sensorLine[0]);
 long int convertNumber = 0;
@@ -10,6 +10,8 @@ long int convertNumber = 0;
 void setup()
 {
   Serial.begin(9600);
+
+  // Khởi tạo chân đầu vào và tắt tất cả các cảm biến
   for (size_t a{0}; a < arraySize; ++a)
   {
     pinMode(sensorLine[a], INPUT);
@@ -19,13 +21,11 @@ void setup()
 
 void funciton_Read_Sensor()
 {
+  // Đọc giá trị từ các cảm biến và giới hạn chúng trong khoảng 0-1000
   for (size_t i{0}; i < arraySize; ++i)
   {
     valueTotalSen[i] = analogRead(sensorLine[i]);
-
-    // Kiểm tra giá trị cảm biến và giới hạn nó trong khoảng 0-1000
     valueTotalSen[i] = constrain(valueTotalSen[i], 0, 1000);
-    // Serial.print(String("Sensor ") + i + String(":\t") + valueTotalSen[i] + String(":\t"));
   }
   Serial.println();
 }
@@ -34,30 +34,28 @@ void Funciton_sitution()
 {
   for (size_t b{0}; b < arraySize; ++b)
   {
+    // Ánh xạ giá trị cảm biến vào khoảng 0-1
     int valueMap = map(valueTotalSen[b], 0, 1000, 0, 1);
     convertNumber = (convertNumber * 10) + valueMap;
-    /*concatenatedNumber = 0 * 10 + 1 = 1
-      concatenatedNumber = 1 * 10 + 0 = 10
-      concatenatedNumber = 10 * 10 + 1 = 101
-      concatenatedNumber = 101 * 10 + 0 = 1010
-      concatenatedNumber = 1010 * 10 + 0 = 10100*/
   }
   Serial.println(convertNumber);
+
+  // Xử lý các tình huống dựa trên giá trị convertNumber
   if (convertNumber == 0)
   {
     not_line();
   }
   else if (convertNumber != 0 && convertNumber != 11111)
   {
-    if (convertNumber == 11000 || convertNumber == 11100) // queo trai
+    if (convertNumber == 11000 || convertNumber == 11100) // queo trái
     {
       left_right(1, 0);
     }
-    else if (convertNumber == 00011 || convertNumber == 00111) // queo phai
+    else if (convertNumber == 00011 || convertNumber == 00111) // queo phải
     {
       left_right(0, 1);
     }
-    else if (convertNumber == 01110) // di thang
+    else if (convertNumber == 01110) // đi thẳng
     {
       straits_back(1, 0);
     }
@@ -80,38 +78,45 @@ void not_line()
   }
 }
 
+// Hàm điều khiển khi đi thẳng hoặc lùi
 void straits_back(bool forward, bool reveres)
 {
   if (!forward && reveres)
   {
     Serial.println("thuan");
+    // Thực hiện hành động khi lùi
     // analogWrite(3, 255);
     // analogWrite(4, 255);
   }
   else if (forward && !reveres)
   {
     Serial.println("nghich");
+    // Thực hiện hành động khi đi thẳng
     // analogWrite(3, -255);
     // analogWrite(4, -255);
   }
 }
 
+// Hàm điều khiển khi rẽ trái hoặc phải
 void left_right(bool left, bool right)
 {
   if (!left && right)
   {
     Serial.println("trai");
+    // Thực hiện hành động khi rẽ trái
     // analogWrite(3, -255);
     // analogWrite(4, 255);
   }
   else if (left && !right)
   {
     Serial.println("phai");
+    // Thực hiện hành động khi rẽ phải
     // analogWrite(3, 255);
     // analogWrite(4, -255);
   }
 }
 
+// Hàm đặt lại biến cờ convertNumber
 void resetVariable()
 {
   convertNumber = 0;
