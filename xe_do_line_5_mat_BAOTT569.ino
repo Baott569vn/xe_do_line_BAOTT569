@@ -8,8 +8,8 @@ Ngày Sửa Đổi Cuối Cùng: [19/12/2023]
 
 Mô Tả:
 Chương trình RobotControlPathSensor.ino là một đoạn mã Arduino được tạo ra để điều khiển một robot
-di động dựa trên dữ liệu đọc từ các cảm biến đường dẫn. 
-Chương trình này cung cấp khả năng cho robot thực hiện các hành động như tiến thẳng, lùi, quẹo trái, 
+di động dựa trên dữ liệu đọc từ các cảm biến đường dẫn.
+Chương trình này cung cấp khả năng cho robot thực hiện các hành động như tiến thẳng, lùi, quẹo trái,
 và quẹo phải tùy thuộc vào thông tin thu được từ môi trường xung quanh.*/
 
 // Khai báo các chân cảm biến
@@ -37,6 +37,32 @@ struct
   byte maxSpeedTurn = 240;
 } motorData;
 
+// Cấu trúc lưu trữ các điều kiện và hành động
+struct DirectionMapping
+{
+  long int condition;
+  void (*action)(byte, byte, byte);
+  byte parameters[3];
+};
+
+void notLine(byte, byte, byte);
+void straitsBack(byte, byte, byte);
+void leftRight(byte, byte, byte);
+
+// Mảng chứa các điều kiện và hành động tương ứng
+DirectionMapping directionMappings[] = {
+    {11111, notLine, {0, 0, 0}},
+    {10001, straitsBack, {1, 0, 0}},
+    {11101, straitsBack, {1, 0, 0}},
+    {0, straitsBack, {1, 0, 0}},
+    {10100, leftRight, {1, 0, 0}},
+    {10110, leftRight, {1, 0, 0}},
+    {11110, leftRight, {1, 0, 0}},
+    {10000, leftRight, {1, 0, 0}},
+    {1011, leftRight, {0, 1, 0}},
+    {1111, leftRight, {0, 1, 0}},
+    {1, leftRight, {0, 1, 0}},
+};
 void setup()
 {
   Serial.begin(9600);
@@ -79,27 +105,20 @@ void processSensorValues()
      concatenatedNumber = 101 * 10 + 0 = 1010
      concatenatedNumber = 1010 * 10 + 0 = 10100*/
   }
-  // Serial.println(concatenatedNumber);
+  Serial.println(concatenatedNumber);
 }
 
+// Hàm xử lý hướng di chuyển
 void handleDirection()
 {
-  // Xử lý hướng di chuyển dựa trên giá trị của concatenatedNumber
-  if (concatenatedNumber == 11111)
+  // Duyệt qua mảng và kiểm tra điều kiện
+  for (const auto &mapping : directionMappings)
   {
-    notLine();
-  }
-  else if (concatenatedNumber == 10001 || concatenatedNumber == 11101 || concatenatedNumber == 0) // di thang
-  {
-    straitsBack(1, 0, 0);
-  }
-  else if (concatenatedNumber == 10100 || concatenatedNumber == 10110 || concatenatedNumber == 11110 || concatenatedNumber == 10000) // queo phai
-  {
-    leftRight(0, 1);
-  }
-  else if (concatenatedNumber == 1011 || concatenatedNumber == 1001 || concatenatedNumber == 1111 || concatenatedNumber == 1) // queo trai
-  {
-    leftRight(1, 0);
+    if (concatenatedNumber == mapping.condition)
+    {
+      mapping.action(mapping.parameters[0], mapping.parameters[1], mapping.parameters[2]);
+      break; // Thoát khỏi vòng lặp khi đã tìm thấy điều kiện
+    }
   }
 }
 
@@ -109,9 +128,9 @@ void functionSituation()
   handleDirection();
 }
 
-void notLine()
+void notLine(byte, byte, byte)
 {
-  leftRight(1, 0);
+  leftRight(1, 0, 0);
 }
 
 void driveMotors(byte in1, byte in2, byte en, MotorPins motor)
@@ -156,7 +175,7 @@ void straitsBack(byte forward, byte reverse, byte stop)
   }
 }
 
-void leftRight(byte left, byte right)
+void leftRight(byte left, byte right, byte stop)
 {
   // Điều khiển động cơ để rẽ trái hoặc phải
   if (left == 1 && right == 0)
@@ -177,7 +196,7 @@ void leftRight(byte left, byte right)
 void resetVariable()
 {
   // Đặt lại biến và tắt động cơ
-  leftRight(0, 0);
+  leftRight(0, 0, 0);
   straitsBack(0, 0, 0);
   concatenatedNumber = 0;
 }
