@@ -22,6 +22,8 @@ const long interval = 2;
 size_t numSensors = sizeof(SENSOR_PINS) / sizeof(SENSOR_PINS[0]);
 long int concatenatedNumber = 0;
 
+byte xnxx;
+
 // Cấu trúc để lưu trữ chân điều khiển động cơ
 struct MotorPins
 {
@@ -33,8 +35,8 @@ struct
 {
   MotorPins motorA{8, 7, 6};
   MotorPins motorB{3, 5, 4};
-  byte maxSpeed = 255;
-  byte maxSpeedTurn = 240;
+  byte maxSpeed = 180;
+  byte maxSpeedTurn = 180;
 } motorData;
 
 // Cấu trúc lưu trữ các điều kiện và hành động
@@ -52,20 +54,30 @@ void leftRight(byte, byte, byte);
 // Mảng chứa các điều kiện và hành động tương ứng
 DirectionMapping directionMappings[] = {
     {11111, notLine, {0, 0, 0}},
+
     {10001, straitsBack, {1, 0, 0}},
-    {11101, straitsBack, {1, 0, 0}},
+    {11011, straitsBack, {1, 0, 0}},
     {0, straitsBack, {1, 0, 0}},
-    {10100, leftRight, {1, 0, 0}},
-    {10110, leftRight, {1, 0, 0}},
-    {11110, leftRight, {1, 0, 0}},
-    {10000, leftRight, {1, 0, 0}},
-    {1011, leftRight, {0, 1, 0}},
-    {1111, leftRight, {0, 1, 0}},
-    {1, leftRight, {0, 1, 0}},
+
+    {11110, leftRight, {0, 1, 0}},
+    {11100, leftRight, {0, 1, 0}},
+    {11101, leftRight, {0, 1, 0}},
+    {11000, leftRight, {0, 1, 0}},
+    {10000, leftRight, {0, 1, 0}},
+    // {11001, leftRight, {0, 1, 0}}, //??
+    {11001, straitsBack, {1, 0, 0}}, //??
+
+    {10011, straitsBack, {1, 0, 0}}, //??
+    // {10011, leftRight, {0, 1, 0}}, //??
+    {10111, leftRight, {1, 0, 0}},
+    {1111, leftRight, {1, 0, 0}},
+    {111, leftRight, {1, 0, 0}},
+    {11, leftRight, {1, 0, 0}},
+    {1, leftRight, {1, 0, 0}},
 };
 void setup()
 {
-  Serial.begin(9600);
+  Serial.begin(115200);
   // Thiết lập chân điều khiển động cơ và cảm biến
   pinMode(motorData.motorA.en, OUTPUT);
   pinMode(motorData.motorA.in1, OUTPUT);
@@ -124,6 +136,7 @@ void handleDirection()
 
 void functionSituation()
 {
+  readSensors();
   processSensorValues();
   handleDirection();
 }
@@ -131,6 +144,9 @@ void functionSituation()
 void notLine(byte, byte, byte)
 {
   leftRight(1, 0, 0);
+  delay(200);
+  straitsBack(0, 0, 1);
+  delay(50);
 }
 
 void driveMotors(byte in1, byte in2, byte en, MotorPins motor)
@@ -150,7 +166,6 @@ void resetMotors()
   digitalWrite(motorData.motorB.in1, 0);
   digitalWrite(motorData.motorB.in2, 0);
   analogWrite(motorData.motorB.en, 0);
-  delay(200);
 }
 
 void straitsBack(byte forward, byte reverse, byte stop)
@@ -159,6 +174,7 @@ void straitsBack(byte forward, byte reverse, byte stop)
   if (forward == 1 && reverse == 0 && stop == 0)
   {
     // Serial.println("thuan");
+
     driveMotors(0, 1, motorData.maxSpeed, motorData.motorA);
     driveMotors(0, 1, motorData.maxSpeed, motorData.motorB);
   }
@@ -171,7 +187,8 @@ void straitsBack(byte forward, byte reverse, byte stop)
   else if (forward == 0 && reverse == 0 && stop == 1)
   {
     // Serial.println("stop");
-    resetMotors();
+    driveMotors(0, 0, motorData.maxSpeed, motorData.motorA);
+    driveMotors(0, 0, motorData.maxSpeed, motorData.motorB);
   }
 }
 
@@ -198,7 +215,7 @@ void resetVariable()
   // Đặt lại biến và tắt động cơ
   leftRight(0, 0, 0);
   straitsBack(0, 0, 0);
-  concatenatedNumber = 0;
+  concatenatedNumber = 0; // khong dc xoa
 }
 
 void loop()
@@ -207,7 +224,6 @@ void loop()
 
   if (currentMillis - previousMillis >= interval)
   {
-    readSensors();
     functionSituation();
     resetVariable();
     previousMillis = currentMillis;
