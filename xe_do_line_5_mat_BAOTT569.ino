@@ -35,8 +35,8 @@ struct
 {
   MotorPins motorA{8, 7, 6};
   MotorPins motorB{3, 5, 4};
-  byte maxSpeed = 180;
-  byte maxSpeedTurn = 180;
+  byte maxSpeed = 160;
+  byte maxSpeedTurn = 160;
 } motorData;
 
 // Cấu trúc lưu trữ các điều kiện và hành động
@@ -85,6 +85,9 @@ void setup()
   pinMode(motorData.motorB.en, OUTPUT);
   pinMode(motorData.motorB.in1, OUTPUT);
   pinMode(motorData.motorB.in2, OUTPUT);
+
+  pinMode(A5, INPUT);
+
   for (size_t i{0}; i < numSensors; ++i)
   {
     pinMode(SENSOR_PINS[i], INPUT);
@@ -192,7 +195,7 @@ void straitsBack(byte forward, byte reverse, byte stop)
   }
 }
 
-void leftRight(byte left, byte right, byte stop)
+void leftRight(byte left, byte right, byte leftmode)
 {
   // Điều khiển động cơ để rẽ trái hoặc phải
   if (left == 1 && right == 0)
@@ -207,7 +210,19 @@ void leftRight(byte left, byte right, byte stop)
     driveMotors(1, 0, motorData.maxSpeedTurn, motorData.motorA);
     driveMotors(0, 1, motorData.maxSpeed, motorData.motorB);
   }
+  else if (leftmode)
+  {
+    driveMotors(0, 1, 255, motorData.motorA);
+    driveMotors(1, 0, 255, motorData.motorB);
+  }
   return;
+}
+void barrierA5()
+{
+  straitsBack(0, 0, 1);
+  delay(500);
+  leftRight(00, 0, 1);
+  delay(800);
 }
 
 void resetVariable()
@@ -222,8 +237,16 @@ void loop()
 {
   unsigned long currentMillis = millis();
 
+  bool valueA5 = digitalRead(A5);
+
   if (currentMillis - previousMillis >= interval)
   {
+
+    if (valueA5 == 1)
+    {
+      // Serial.println("BARRIER!!!!");
+      barrierA5();
+    }
     functionSituation();
     resetVariable();
     previousMillis = currentMillis;
